@@ -17,12 +17,20 @@ using namespace std;
 @return  true if the file can be opened, or false if not */
 bool openFileIn(ifstream& inputFile, const string& fileName);
 
+/** Checks to see if string is parenthetically correct
+@param expression	The string to test for parenthetical correctness
+@return  true if the string is parenthetically correct, or false if not */
+bool checkExpression(const string& expression);
+
+
 int main()
 {
 	ifstream inputFile;
 	string fileName;  // Holds the user-inputted file name
 	string fileLine;  // Holds the line extracted from the file
+	string expression; // Holds the expression to be tested
 	bool ableToOpen;  // Flag to see if file exists
+	bool isBalanced;  // Flag for balanced expression
 
 	cout << "Create queue object lq\n\n";
 	LinkedQueue<string> lq;
@@ -43,7 +51,7 @@ int main()
 	{
 		lq.enqueue(fileLine);
 		getline(inputFile, fileLine);
-	}
+	} // end while
 	inputFile.close();
 
 	cout << "\n\n\nAfter getting the file input, test other functions*******\n";
@@ -69,10 +77,10 @@ int main()
 	cout << "\nPut the first string in lq into a stack of chars, ls1\n\n";
 	LinkedStack<char> ls1;
 	string firstLine = lq.peekFront();
-	for (int i = 0; i < firstLine.length(); i++)
+	for (unsigned int i = 0; i < firstLine.length(); i++)
 	{
 		ls1.push(firstLine[i]);
-	}
+	} // end for
 
 	cout << "Create a copy, ls2, of the stack and display the copy:\n";
 	LinkedStack<char> ls2(ls1);
@@ -82,9 +90,18 @@ int main()
 	ls2 = ls1;
 	cout << ls2;
 
-	cout << "\n\n\nDo the expression checking:\n\n";
-	//Need to create function to pass queue items into so stack can process them
-
+	cout << "\n\n\n\nDo the expression checking:\n\n\n";
+	while (!lq.isEmpty())
+	{
+		expression = lq.peekFront();
+		lq.dequeue();
+		cout << "The next string is:\t" << expression;
+		isBalanced = checkExpression(expression);
+		if (isBalanced)
+			cout << "\tis a correct expression\n\n\n";
+		else
+			cout << "\tis NOT a correct expression\n\n\n";
+	} // end while
 
 	// Program Over
 	cout << "Program Over\n\n";
@@ -93,7 +110,7 @@ int main()
 	cin.ignore();
 	cout << endl;
 	return 0;
-}
+} // end main
 
 bool openFileIn(ifstream& inputFile, const string& fileName)
 {
@@ -107,3 +124,73 @@ bool openFileIn(ifstream& inputFile, const string& fileName)
 
 	return status;
 } // end openFileIn
+
+bool checkExpression(const string& expression)
+{
+	LinkedStack<char> balancedStack;
+	bool balancedSoFar = true;
+	unsigned int i = 0;  // Used to keep track of position in expression
+	int singleQuote = 0, doubleQuote = 0;  // Used to keep track of delimiters ' and "
+	char ch;  // Holds character at position i in expression
+
+	while ( balancedSoFar && (i < expression.length()) )
+	{
+		// Get first character in expression, then increment position
+		ch = expression[i];
+		i++;
+
+		switch (ch)
+		{	
+			// Skip next character if escape character is found
+			case '\\':
+				i++;
+				break;
+
+			// Push an open token
+			case '{':
+			case '[':
+			case '(':
+				balancedStack.push(ch);
+				break;
+			case '\'':
+			{
+				singleQuote++;
+				if (singleQuote % 2 == 0)
+					balancedStack.pop();  // Pop matching delimiter
+				else
+					balancedStack.push(ch);
+				break;
+			} // end ' case
+			case '"':
+			{
+				doubleQuote++;
+				if (doubleQuote % 2 == 0)
+					balancedStack.pop();  // Pop matching delimiter
+				else
+					balancedStack.push(ch);
+				break;
+			} // end " case
+			
+			// Close tokens
+			case '}':
+			case ']':
+			case ')':
+			{
+				// Make sure stack is not empty and the close token matches the open
+				if (!balancedStack.isEmpty() && 
+					(  (balancedStack.peek() == '(') 
+					|| (balancedStack.peek() == '{')
+					|| (balancedStack.peek() == '[') ) )
+					balancedStack.pop();  // Pop a matching closed token
+				else                      // No matching closed token
+					balancedSoFar = false;
+				break;
+			}
+		} // end switch
+	} // end while
+
+	if ( !(balancedSoFar && balancedStack.isEmpty()) )
+		balancedSoFar = false;
+
+	return balancedSoFar;
+} // end checkExpression
